@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Fullscreen kiosk meta: launches chromeless from Home Screen, no address bar -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Checkout">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="format-detection" content="telephone=no">
+  <title>Checkout</title>
+
+  <style>
+    /* ============================================================
+       VISUAL TOKENS — tuned to the Square reference photo
+       ============================================================ */
+    :root {
+      --bg:         #0a0a0a;  /* screen background (near-black)        */
+      --blue:       #1c9dd7;  /* preset tip buttons                   */
+      --blue-press: #1684b6;  /* preset pressed state                 */
+      --blue-alt:   #34a9cf;  /* Custom Tip / No Tip row              */
+      --accent:     #2bc0ff;  /* Cancel link                          */
+      --text:       #ffffff;  /* title, button labels                 */
+      --muted:      #8a8a8e;  /* subtotal, language label             */
+      --green:      #2fbf5f;  /* confirmation checkmark               */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                   "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      /* kiosk hardening: no selection, no callout, no tap highlight */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      /* respect the device safe area but keep the dark field edge-to-edge */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+               env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(20px, 4vh, 56px) clamp(20px, 4vw, 64px);
+    }
+    .hidden { display: none !important; }
+
+    /* ============================================================
+       TIP SCREEN
+       ============================================================ */
+    .header {
+      text-align: center;
+      margin-bottom: clamp(20px, 4vh, 48px);
+    }
+    .header h1 {
+      font-size: clamp(30px, 5vh, 56px);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .subtotal {
+      margin-top: clamp(8px, 1.4vh, 16px);
+      color: var(--muted);
+      font-size: clamp(17px, 2.4vh, 26px);
+      font-weight: 400;
+    }
+
+    .presets {
+      display: flex;
+      gap: clamp(14px, 2vw, 28px);
+      width: 100%;
+      max-width: 1000px;
+      margin-bottom: clamp(14px, 2vh, 24px);
+    }
+
+    .preset {
+      flex: 1;
+      min-height: clamp(120px, 26vh, 230px);
+      border: none;
+      border-radius: 14px;
+      color: var(--text);
+      font-size: clamp(32px, 6vh, 64px);
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      /* subtle diagonal hatch over the blue, matching the photo */
+      background-color: var(--blue);
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.06) 0px,
+        rgba(255, 255, 255, 0.06) 2px,
+        rgba(0, 0, 0, 0.06) 2px,
+        rgba(0, 0, 0, 0.06) 14px
+      );
+      transition: transform 90ms ease, background-color 90ms ease, filter 90ms ease;
+    }
+
+    .secondary-row {
+      display: flex;
+      gap: clamp(14px, 2vw, 28px);
+      width: 100%;
+      max-width: 1000px;
+    }
+    .alt {
+      flex: 1;
+      min-height: clamp(74px, 13vh, 118px);
+      border: none;
+      border-radius: 14px;
+      background-color: var(--blue-alt);
+      color: var(--text);
+      font-size: clamp(20px, 3vh, 30px);
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 90ms ease, background-color 90ms ease, filter 90ms ease;
+    }
+
+    /* shared press feedback: dip down slightly + darken on touch */
+    .preset.pressed,
+    .alt.pressed,
+    .key.pressed,
+    .kp-action.pressed {
+      transform: scale(0.97);
+      filter: brightness(0.86);
+    }
+    .preset.pressed { background-color: var(--blue-press); }
+
+    .cancel {
+      margin-top: clamp(22px, 4vh, 48px);
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: clamp(18px, 2.4vh, 26px);
+      font-weight: 400;
+      cursor: pointer;
+      padding: 10px 24px;
+    }
+    .cancel:active { opacity: 0.6; }
+
+    .footer {
+      position: absolute;
+      bottom: clamp(18px, 3vh, 40px);
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: clamp(15px, 2vh, 20px);
+    }
+    .footer svg { width: 1.05em; height: 1.05em; opacity: 0.85; }
+
+    /* ============================================================
+       CUSTOM KEYPAD
+       ============================================================ */
+    #keypadScreen { justify-content: center; }
+    .amount-display {
+      font-size: clamp(48px, 11vh, 110px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: clamp(16px, 3vh, 36px);
+      min-height: 1.1em;
+      font-variant-numeric: tabular-nums;
+    }
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(10px, 1.6vw, 20px);
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: clamp(16px, 3vh, 32px);
+    }
+    .key {
+      min-height: clamp(58px, 11vh, 96px);
+      border: none;
+      border-radius: 12px;
+      background: #1a1a1c;
+      color: var(--text);
+      font-size: clamp(26px, 4.5vh, 44px);
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 90ms ease, filter 90ms ease;
+      font-variant-numeric: tabular-nums;
+    }
+    .key svg { width: 0.9em; height: 0.9em; }
+
+    .keypad-actions {
+      display: flex;
+      gap: clamp(10px, 1.6vw, 20px);
+      width: 100%;
+      max-width: 520px;
+    }
+    .kp-action {
+      flex: 1;
+      min-height: clamp(54px, 9vh, 80px);
+      border: none;
+      border-radius: 12px;
+      font-size: clamp(18px, 2.6vh, 26px);
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text);
+      transition: transform 90ms ease, filter 90ms ease;
+    }
+    #kpBack { background: #1a1a1c; }
+    #kpAdd  { background: var(--blue); }
+    #kpAdd.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ============================================================
+       CONFIRMATION OVERLAY
+       ============================================================ */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(18px, 3vh, 36px);
+    }
+
+    /* processing spinner */
+    .spinner {
+      width: clamp(56px, 9vh, 90px);
+      height: clamp(56px, 9vh, 90px);
+      border: 5px solid rgba(255, 255, 255, 0.16);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* success cluster */
+    .success { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vh, 30px); }
+    .check-circle {
+      width: clamp(96px, 18vh, 180px);
+      height: clamp(96px, 18vh, 180px);
+    }
+    .check-circle circle {
+      fill: none;
+      stroke: var(--green);
+      stroke-width: 5;
+      stroke-dasharray: 295;
+      stroke-dashoffset: 295;
+      animation: draw-circle 0.5s ease forwards;
+    }
+    .check-circle path {
+      fill: none;
+      stroke: var(--green);
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
+      animation: draw-check 0.35s 0.42s ease forwards;
+    }
+    @keyframes draw-circle { to { stroke-dashoffset: 0; } }
+    @keyframes draw-check  { to { stroke-dashoffset: 0; } }
+
+    .thanks {
+      font-size: clamp(30px, 5.5vh, 60px);
+      font-weight: 600;
+      opacity: 0;
+      animation: fade-up 0.4s 0.5s ease forwards;
+    }
+    .confirm-amount {
+      color: var(--muted);
+      font-size: clamp(18px, 2.6vh, 28px);
+      opacity: 0;
+      animation: fade-up 0.4s 0.62s ease forwards;
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       HIDDEN BARISTA RESET CORNER (top-left, invisible)
+       ============================================================ */
+    #resetCorner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 90px;
+      height: 90px;
+      z-index: 50;
+      /* invisible to customers; sits in dead space away from buttons */
+      background: transparent;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <!-- Hidden long-press reset zone (top-left, 90x90) -->
+    <div id="resetCorner"></div>
+
+    <!-- ===== TIP SCREEN (default) =====
+         EDIT HERE to reskin for the discount variant:
+         change the <h1>, the .preset labels + their data-amount,
+         and the .alt labels. Logic stays untouched. -->
+    <section id="tipScreen" class="screen">
+      <div class="header">
+        <h1>Add a Tip</h1>
+        <p class="subtotal">$<span id="subtotalText">2.70</span></p>
+      </div>
+
+      <div class="presets">
+        <button class="preset" data-amount="1.00">$1</button>
+        <button class="preset" data-amount="2.00">$2</button>
+        <button class="preset" data-amount="3.00">$3</button>
+      </div>
+
+      <div class="secondary-row">
+        <button class="alt" id="customBtn">Custom Tip</button>
+        <button class="alt" id="noTipBtn">No Tip</button>
+      </div>
+
+      <button class="cancel" id="cancelBtn">Cancel</button>
+
+      <div class="footer">
+        <!-- globe icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"></path>
+        </svg>
+        <span>English</span>
+      </div>
+    </section>
+
+    <!-- ===== CUSTOM KEYPAD ===== -->
+    <section id="keypadScreen" class="screen hidden">
+      <div class="amount-display" id="amountDisplay">$0.00</div>
+      <div class="keys">
+        <button class="key" data-digit="1">1</button>
+        <button class="key" data-digit="2">2</button>
+        <button class="key" data-digit="3">3</button>
+        <button class="key" data-digit="4">4</button>
+        <button class="key" data-digit="5">5</button>
+        <button class="key" data-digit="6">6</button>
+        <button class="key" data-digit="7">7</button>
+        <button class="key" data-digit="8">8</button>
+        <button class="key" data-digit="9">9</button>
+        <button class="key" data-digit="0" style="grid-column: 2;">0</button>
+        <button class="key" id="kpBackspace" aria-label="Backspace">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 5H8.5L3 12l5.5 7H21z"></path>
+            <path d="M11 9.5l5 5M16 9.5l-5 5"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="keypad-actions">
+        <button class="kp-action" id="kpBack">Back</button>
+        <button class="kp-action disabled" id="kpAdd">Add Tip</button>
+      </div>
+    </section>
+
+    <!-- ===== CONFIRMATION OVERLAY ===== -->
+    <div id="confirmOverlay" class="overlay hidden">
+      <div class="spinner" id="spinner"></div>
+      <div class="success hidden" id="success">
+        <svg class="check-circle" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="47"></circle>
+          <path d="M28 51 L44 67 L73 36"></path>
+        </svg>
+        <div class="thanks" id="thanksText">Thank you!</div>
+        <div class="confirm-amount" id="confirmAmount"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       CONFIG — everything tunable lives here
+       ============================================================ */
+    const CONFIG = {
+      subtotal:     "2.70",     // amount shown under the title
+      thankYouMsg:  "Thank you!", // confirmation headline
+      processingMs: 1100,       // processing spinner duration
+      showCheckMs:  2200,       // how long the checkmark holds before auto-reset
+      longPressMs:  1200,       // hold time on the corner to reset
+      idleResetMs:  60000       // inactivity reset (set 0 to disable)
+    };
+
+    /* ---------- element refs ---------- */
+    const tipScreen    = document.getElementById('tipScreen');
+    const keypadScreen = document.getElementById('keypadScreen');
+    const overlay      = document.getElementById('confirmOverlay');
+    const spinner      = document.getElementById('spinner');
+    const success      = document.getElementById('success');
+    const thanksText   = document.getElementById('thanksText');
+    const confirmAmount= document.getElementById('confirmAmount');
+    const amountDisplay= document.getElementById('amountDisplay');
+    const kpAdd        = document.getElementById('kpAdd');
+
+    /* ---------- apply config to the DOM ---------- */
+    document.getElementById('subtotalText').textContent = CONFIG.subtotal;
+    thanksText.textContent = CONFIG.thankYouMsg;
+
+    /* ---------- state ---------- */
+    let cents = 0;                 // keypad accumulator (terminal-style entry)
+    let confirmTimers = [];        // in-flight confirmation timeouts
+    let idleTimer = null;
+
+    /* ============================================================
+       SCREEN HELPERS
+       ============================================================ */
+    function showOnly(el) {
+      tipScreen.classList.add('hidden');
+      keypadScreen.classList.add('hidden');
+      el.classList.remove('hidden');
+    }
+
+    function clearConfirmTimers() {
+      confirmTimers.forEach(clearTimeout);
+      confirmTimers = [];
+    }
+
+    /* Hard reset to the clean start screen from ANY state. */
+    function reset() {
+      clearConfirmTimers();
+      overlay.classList.add('hidden');
+      spinner.classList.remove('hidden');
+      success.classList.add('hidden');
+      resetKeypad();
+      showOnly(tipScreen);
+      bumpIdle();
+    }
+
+    /* ============================================================
+       CONFIRMATION FLOW
+       processing spinner -> green check + thanks -> auto-reset
+       amount: a display string like "$1.00", or null for No Tip
+       ============================================================ */
+    function confirm(amount) {
+      clearConfirmTimers();
+      // prep overlay: spinner visible, success hidden, re-arm animations
+      spinner.classList.remove('hidden');
+      success.classList.add('hidden');
+      confirmAmount.textContent = amount ? amount + ' tip added' : '';
+      overlay.classList.remove('hidden');
+
+      // 1) processing -> reveal success
+      confirmTimers.push(setTimeout(() => {
+        spinner.classList.add('hidden');
+        // force a reflow so the SVG draw animations replay each time
+        success.classList.remove('hidden');
+        void success.offsetWidth;
+        // 2) hold the checkmark, then auto-return
+        confirmTimers.push(setTimeout(reset, CONFIG.showCheckMs));
+      }, CONFIG.processingMs));
+    }
+
+    /* ============================================================
+       KEYPAD
+       ============================================================ */
+    function resetKeypad() {
+      cents = 0;
+      renderAmount();
+    }
+    function renderAmount() {
+      const dollars = (cents / 100).toFixed(2);
+      amountDisplay.textContent = '$' + dollars;
+      kpAdd.classList.toggle('disabled', cents === 0);
+    }
+    function pushDigit(d) {
+      // terminal-style: digits shift in from the right
+      const next = cents * 10 + d;
+      if (next > 9999999) return; // sane cap ($99,999.99)
+      cents = next;
+      renderAmount();
+    }
+    function backspace() {
+      cents = Math.floor(cents / 10);
+      renderAmount();
+    }
+
+    /* ============================================================
+       PRESS FEEDBACK — add .pressed on pointer down, strip on up
+       (visual dip + darken without relying on :active quirks)
+       ============================================================ */
+    function wirePress(el) {
+      const on  = () => el.classList.add('pressed');
+      const off = () => el.classList.remove('pressed');
+      el.addEventListener('pointerdown', on);
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointerleave', off);
+      el.addEventListener('pointercancel', off);
+    }
+    document.querySelectorAll('.preset, .alt, .key, .kp-action').forEach(wirePress);
+
+    /* ============================================================
+       EVENT WIRING
+       ============================================================ */
+    // preset tips
+    document.querySelectorAll('.preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        confirm('$' + Number(btn.dataset.amount).toFixed(2));
+      });
+    });
+
+    // No Tip — same flow, no amount line
+    document.getElementById('noTipBtn').addEventListener('click', () => confirm(null));
+
+    // Custom Tip -> keypad
+    document.getElementById('customBtn').addEventListener('click', () => {
+      resetKeypad();
+      showOnly(keypadScreen);
+    });
+
+    // Cancel -> start
+    document.getElementById('cancelBtn').addEventListener('click', reset);
+
+    // keypad digits + backspace
+    document.querySelectorAll('.key[data-digit]').forEach(k => {
+      k.addEventListener('click', () => pushDigit(Number(k.dataset.digit)));
+    });
+    document.getElementById('kpBackspace').addEventListener('click', backspace);
+    document.getElementById('kpBack').addEventListener('click', () => { resetKeypad(); showOnly(tipScreen); });
+    kpAdd.addEventListener('click', () => {
+      if (cents === 0) return;
+      confirm('$' + (cents / 100).toFixed(2));
+    });
+
+    /* ============================================================
+       HIDDEN BARISTA RESET — long-press top-left corner
+       ============================================================ */
+    (function () {
+      const corner = document.getElementById('resetCorner');
+      let pressTimer = null;
+      const start = (e) => {
+        e.preventDefault();
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(reset, CONFIG.longPressMs);
+      };
+      const cancel = () => clearTimeout(pressTimer);
+      corner.addEventListener('pointerdown', start);
+      corner.addEventListener('pointerup', cancel);
+      corner.addEventListener('pointerleave', cancel);
+      corner.addEventListener('pointercancel', cancel);
+    })();
+
+    /* ============================================================
+       IDLE AUTO-RESET — backstop for an abandoned flow
+       ============================================================ */
+    function bumpIdle() {
+      if (!CONFIG.idleResetMs) return;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(reset, CONFIG.idleResetMs);
+    }
+    ['pointerdown', 'touchstart', 'keydown'].forEach(evt =>
+      document.addEventListener(evt, bumpIdle, { passive: true })
+    );
+
+    /* ============================================================
+       KIOSK HARDENING — kill gestures that could break the illusion
+       ============================================================ */
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('dblclick', e => e.preventDefault());
+
+    /* ---------- boot ---------- */
+    reset();
+  </script>
+</body>
+</html>
