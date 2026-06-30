@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Checkout">
-  <meta name="theme-color" content="#0a0a0a">
+  <meta name="theme-color" content="#373737">
   <meta name="format-detection" content="telephone=no">
   <title>Checkout</title>
 
@@ -17,19 +17,19 @@
        VISUAL TOKENS — tuned to the Square reference photo
        ============================================================ */
     :root {
-      --bg:         #0a0a0a;  /* screen background (near-black)        */
+      --bg:         #373737;  /* screen background                    */
       --blue:       #1c9dd7;  /* preset tip buttons                   */
       --blue-press: #1684b6;  /* preset pressed state                 */
       --blue-alt:   #2ea3d1;  /* Custom Tip / No Tip row (just a hair lighter) */
       --accent:     #2bc0ff;  /* Cancel link                          */
-      --text:       #ffffff;  /* title, button labels                 */
+      --text:       #dedede;  /* title, button labels                 */
       --muted:      #9a9a9f;  /* subtotal, language label             */
       --green:      #2fbf5f;  /* confirmation checkmark               */
 
       /* ---- layout tokens (cloned from the reference photo) ---- */
       --gap:    16px;    /* the thin dark gap between all boxes — the key value */
       --pad-x:  3.6vw;   /* side padding from screen edge to the button band    */
-      --radius: 5px;     /* button corner rounding (square-ish, like the photo) */
+      --radius: 2px;     /* button corner rounding (nearly square, like the photo) */
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -123,14 +123,15 @@
     /* --- button block: presets row over a 50/50 secondary row,
            uniform --gap between every box --- */
     .grid {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
+      height: clamp(280px, 49vh, 412px);
+      /* center the button block vertically in the space below the title,
+         so the empty space is balanced above and below */
+      margin-block: auto;
       display: flex;
       flex-direction: column;
       gap: var(--gap);
       min-height: 0;
-      /* cap height so the buttons stay wide-rectangular and sit in the
-         upper-middle, leaving black space below — as in the photo */
-      max-height: clamp(280px, 49vh, 412px);
     }
     .presets {
       flex: 1.6 1 0;        /* presets ~1.6x taller than the row below */
@@ -155,6 +156,10 @@
       cursor: pointer;
       overflow: hidden;
       position: relative;
+      display: flex;                 /* center the label both axes */
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       /* subtle diagonal hatch over the blue, matching the photo */
       background-color: var(--blue);
       background-image: repeating-linear-gradient(
@@ -224,7 +229,7 @@
       min-height: clamp(58px, 11vh, 96px);
       border: none;
       border-radius: 12px;
-      background: #1a1a1c;
+      background: #4a4a4a;
       color: var(--text);
       font-size: clamp(26px, 4.5vh, 44px);
       font-weight: 500;
@@ -251,7 +256,7 @@
       color: var(--text);
       transition: transform 90ms ease, filter 90ms ease;
     }
-    #kpBack { background: #1a1a1c; }
+    #kpBack { background: #4a4a4a; }
     #kpAdd  { background: var(--blue); }
     #kpAdd.disabled { opacity: 0.4; pointer-events: none; }
 
