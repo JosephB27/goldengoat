@@ -160,15 +160,8 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      /* square filled with the text color; subtle diagonal hatch on top */
+      /* solid square filled with the text color */
       background-color: var(--text);
-      background-image: repeating-linear-gradient(
-        -45deg,
-        rgba(255, 255, 255, 0.05) 0px,
-        rgba(255, 255, 255, 0.05) 1px,
-        rgba(0, 0, 0, 0.05) 1px,
-        rgba(0, 0, 0, 0.05) 11px
-      );
       transition: transform 90ms ease, background-color 90ms ease, filter 90ms ease;
     }
     .preset {
