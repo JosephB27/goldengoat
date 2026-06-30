@@ -113,8 +113,8 @@
     #tipScreen {
       align-items: stretch;          /* full-width children inside the padding */
       justify-content: flex-start;
-      /* bottom padding reserves room for the absolute footer */
-      padding: clamp(20px, 3.4vh, 34px) var(--pad-x) clamp(52px, 8vh, 78px);
+      /* extra top padding drops the title lower; bottom reserves footer room */
+      padding: clamp(48px, 8vh, 92px) var(--pad-x) clamp(52px, 8vh, 78px);
       gap: clamp(14px, 2.6vh, 28px);
     }
 
