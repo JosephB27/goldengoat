@@ -20,11 +20,16 @@
       --bg:         #0a0a0a;  /* screen background (near-black)        */
       --blue:       #1c9dd7;  /* preset tip buttons                   */
       --blue-press: #1684b6;  /* preset pressed state                 */
-      --blue-alt:   #34a9cf;  /* Custom Tip / No Tip row              */
+      --blue-alt:   #2ea3d1;  /* Custom Tip / No Tip row (just a hair lighter) */
       --accent:     #2bc0ff;  /* Cancel link                          */
       --text:       #ffffff;  /* title, button labels                 */
-      --muted:      #8a8a8e;  /* subtotal, language label             */
+      --muted:      #9a9a9f;  /* subtotal, language label             */
       --green:      #2fbf5f;  /* confirmation checkmark               */
+
+      /* ---- layout tokens (cloned from the reference photo) ---- */
+      --gap:    16px;    /* the thin dark gap between all boxes — the key value */
+      --pad-x:  3.6vw;   /* side padding from screen edge to the button band    */
+      --radius: 5px;     /* button corner rounding (square-ish, like the photo) */
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,109 +76,120 @@
     .hidden { display: none !important; }
 
     /* ============================================================
-       TIP SCREEN
+       TIP SCREEN  — cloned 1:1 from the Square reference photo
+       Layout: top bar (title + Cancel) · one 3-col button grid ·
+       bottom-right language footer. Optimized to fill the iPad
+       (A16) landscape viewport, 1180 x 820 CSS px.
        ============================================================ */
-    .header {
-      text-align: center;
-      margin-bottom: clamp(20px, 4vh, 48px);
+    #tipScreen {
+      align-items: stretch;          /* full-width children inside the padding */
+      justify-content: flex-start;
+      /* bottom padding reserves room for the absolute footer */
+      padding: clamp(20px, 3.4vh, 34px) var(--pad-x) clamp(52px, 8vh, 78px);
+      gap: clamp(14px, 2.6vh, 28px);
     }
-    .header h1 {
-      font-size: clamp(30px, 5vh, 56px);
-      font-weight: 600;
+
+    /* --- top bar: "Add a Tip" + "$2.70" on the left, "Cancel" on the right --- */
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .titleblock h1 {
+      font-size: clamp(26px, 4.2vh, 42px);
+      font-weight: 500;
       letter-spacing: -0.01em;
+      line-height: 1.05;
     }
-    .subtotal {
-      margin-top: clamp(8px, 1.4vh, 16px);
+    .titleblock .subtotal {
+      margin-top: clamp(4px, 0.9vh, 10px);
       color: var(--muted);
-      font-size: clamp(17px, 2.4vh, 26px);
+      font-size: clamp(15px, 2.4vh, 24px);
       font-weight: 400;
     }
+    .cancel {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: clamp(22px, 3.6vh, 36px);
+      font-weight: 400;
+      line-height: 1.05;
+      cursor: pointer;
+      padding: 0;
+    }
+    .cancel.pressed { opacity: 0.55; }
 
-    .presets {
-      display: flex;
-      gap: clamp(14px, 2vw, 28px);
-      width: 100%;
-      max-width: 1000px;
-      margin-bottom: clamp(14px, 2vh, 24px);
+    /* --- the button grid: 3 columns, 2 rows, uniform --gap everywhere --- */
+    .grid {
+      flex: 1 1 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 1.6fr 1fr;    /* presets ~1.6x taller than the row below */
+      gap: var(--gap);
+      min-height: 0;
+      /* cap height so the buttons stay wide-rectangular and sit in the
+         upper-middle, leaving black space below — as in the photo */
+      max-height: clamp(280px, 49vh, 412px);
     }
 
-    .preset {
-      flex: 1;
-      min-height: clamp(120px, 26vh, 230px);
+    .preset,
+    .alt {
       border: none;
-      border-radius: 14px;
+      border-radius: var(--radius);
       color: var(--text);
-      font-size: clamp(32px, 6vh, 64px);
-      font-weight: 600;
       cursor: pointer;
-      position: relative;
       overflow: hidden;
+      position: relative;
       /* subtle diagonal hatch over the blue, matching the photo */
       background-color: var(--blue);
       background-image: repeating-linear-gradient(
         -45deg,
-        rgba(255, 255, 255, 0.06) 0px,
-        rgba(255, 255, 255, 0.06) 2px,
-        rgba(0, 0, 0, 0.06) 2px,
-        rgba(0, 0, 0, 0.06) 14px
+        rgba(255, 255, 255, 0.05) 0px,
+        rgba(255, 255, 255, 0.05) 1px,
+        rgba(0, 0, 0, 0.05) 1px,
+        rgba(0, 0, 0, 0.05) 11px
       );
       transition: transform 90ms ease, background-color 90ms ease, filter 90ms ease;
     }
-
-    .secondary-row {
-      display: flex;
-      gap: clamp(14px, 2vw, 28px);
-      width: 100%;
-      max-width: 1000px;
+    .preset {
+      font-size: clamp(30px, 6.4vh, 64px);
+      font-weight: 500;
+      letter-spacing: -0.005em;
+      font-variant-numeric: tabular-nums;
     }
     .alt {
-      flex: 1;
-      min-height: clamp(74px, 13vh, 118px);
-      border: none;
-      border-radius: 14px;
       background-color: var(--blue-alt);
-      color: var(--text);
-      font-size: clamp(20px, 3vh, 30px);
-      font-weight: 500;
-      cursor: pointer;
-      transition: transform 90ms ease, background-color 90ms ease, filter 90ms ease;
+      font-size: clamp(18px, 3vh, 30px);
+      font-weight: 400;
     }
+    /* secondary row split: "Custom Tip" = 1 column, "No Tip" = 2 columns,
+       so the divider lands exactly on the gap after the first preset */
+    #customBtn { grid-column: 1 / span 1; grid-row: 2; }
+    #noTipBtn  { grid-column: 2 / span 2; grid-row: 2; }
 
     /* shared press feedback: dip down slightly + darken on touch */
     .preset.pressed,
     .alt.pressed,
     .key.pressed,
     .kp-action.pressed {
-      transform: scale(0.97);
+      transform: scale(0.985);
       filter: brightness(0.86);
     }
     .preset.pressed { background-color: var(--blue-press); }
 
-    .cancel {
-      margin-top: clamp(22px, 4vh, 48px);
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: clamp(18px, 2.4vh, 26px);
-      font-weight: 400;
-      cursor: pointer;
-      padding: 10px 24px;
-    }
-    .cancel:active { opacity: 0.6; }
-
+    /* --- language footer, bottom-right --- */
     .footer {
       position: absolute;
-      bottom: clamp(18px, 3vh, 40px);
-      left: 0;
-      right: 0;
+      right: var(--pad-x);
+      bottom: clamp(14px, 2.4vh, 26px);
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      gap: 6px;
       color: var(--muted);
-      font-size: clamp(15px, 2vh, 20px);
+      font-size: clamp(13px, 1.9vh, 19px);
     }
-    .footer svg { width: 1.05em; height: 1.05em; opacity: 0.85; }
+    .footer svg { width: 1.05em; height: 1.05em; opacity: 0.9; }
 
     /* ============================================================
        CUSTOM KEYPAD
@@ -326,24 +342,25 @@
          change the <h1>, the .preset labels + their data-amount,
          and the .alt labels. Logic stays untouched. -->
     <section id="tipScreen" class="screen">
-      <div class="header">
-        <h1>Add a Tip</h1>
-        <p class="subtotal">$<span id="subtotalText">2.70</span></p>
+      <!-- top bar: title + subtotal (left), Cancel (right) -->
+      <div class="topbar">
+        <div class="titleblock">
+          <h1>Add a Tip</h1>
+          <p class="subtotal">$<span id="subtotalText">2.70</span></p>
+        </div>
+        <button class="cancel" id="cancelBtn">Cancel</button>
       </div>
 
-      <div class="presets">
-        <button class="preset" data-amount="1.00">$1</button>
-        <button class="preset" data-amount="2.00">$2</button>
-        <button class="preset" data-amount="3.00">$3</button>
-      </div>
-
-      <div class="secondary-row">
+      <!-- one 3-column grid: presets (row 1), Custom Tip + No Tip (row 2) -->
+      <div class="grid">
+        <button class="preset" data-amount="1.00">$1.00</button>
+        <button class="preset" data-amount="2.00">$2.00</button>
+        <button class="preset" data-amount="3.00">$3.00</button>
         <button class="alt" id="customBtn">Custom Tip</button>
         <button class="alt" id="noTipBtn">No Tip</button>
       </div>
 
-      <button class="cancel" id="cancelBtn">Cancel</button>
-
+      <!-- language footer, bottom-right -->
       <div class="footer">
         <!-- globe icon -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -513,7 +530,7 @@
       el.addEventListener('pointerleave', off);
       el.addEventListener('pointercancel', off);
     }
-    document.querySelectorAll('.preset, .alt, .key, .kp-action').forEach(wirePress);
+    document.querySelectorAll('.preset, .alt, .key, .kp-action, .cancel').forEach(wirePress);
 
     /* ============================================================
        EVENT WIRING
