@@ -120,17 +120,31 @@
     }
     .cancel.pressed { opacity: 0.55; }
 
-    /* --- the button grid: 3 columns, 2 rows, uniform --gap everywhere --- */
+    /* --- button block: presets row over a 50/50 secondary row,
+           uniform --gap between every box --- */
     .grid {
       flex: 1 1 auto;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: 1.6fr 1fr;    /* presets ~1.6x taller than the row below */
+      display: flex;
+      flex-direction: column;
       gap: var(--gap);
       min-height: 0;
       /* cap height so the buttons stay wide-rectangular and sit in the
          upper-middle, leaving black space below — as in the photo */
       max-height: clamp(280px, 49vh, 412px);
+    }
+    .presets {
+      flex: 1.6 1 0;        /* presets ~1.6x taller than the row below */
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      min-height: 0;
+    }
+    .secondary {
+      flex: 1 1 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;   /* Custom Tip / No Tip as equal halves */
+      gap: var(--gap);
+      min-height: 0;
     }
 
     .preset,
@@ -163,11 +177,6 @@
       font-size: clamp(18px, 3vh, 30px);
       font-weight: 400;
     }
-    /* secondary row split: "Custom Tip" = 1 column, "No Tip" = 2 columns,
-       so the divider lands exactly on the gap after the first preset */
-    #customBtn { grid-column: 1 / span 1; grid-row: 2; }
-    #noTipBtn  { grid-column: 2 / span 2; grid-row: 2; }
-
     /* shared press feedback: dip down slightly + darken on touch */
     .preset.pressed,
     .alt.pressed,
@@ -351,13 +360,17 @@
         <button class="cancel" id="cancelBtn">Cancel</button>
       </div>
 
-      <!-- one 3-column grid: presets (row 1), Custom Tip + No Tip (row 2) -->
+      <!-- button block: 3 presets on top, Custom Tip + No Tip (50/50) below -->
       <div class="grid">
-        <button class="preset" data-amount="1.00">$1.00</button>
-        <button class="preset" data-amount="2.00">$2.00</button>
-        <button class="preset" data-amount="3.00">$3.00</button>
-        <button class="alt" id="customBtn">Custom Tip</button>
-        <button class="alt" id="noTipBtn">No Tip</button>
+        <div class="presets">
+          <button class="preset" data-amount="1.00">$1.00</button>
+          <button class="preset" data-amount="2.00">$2.00</button>
+          <button class="preset" data-amount="3.00">$3.00</button>
+        </div>
+        <div class="secondary">
+          <button class="alt" id="customBtn">Custom Tip</button>
+          <button class="alt" id="noTipBtn">No Tip</button>
+        </div>
       </div>
 
       <!-- language footer, bottom-right -->
