@@ -152,7 +152,7 @@
     .alt {
       border: none;
       border-radius: var(--radius);
-      color: var(--text);
+      color: var(--bg);             /* label matches the screen background */
       cursor: pointer;
       overflow: hidden;
       position: relative;
@@ -160,8 +160,8 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      /* subtle diagonal hatch over the blue, matching the photo */
-      background-color: var(--blue);
+      /* square filled with the text color; subtle diagonal hatch on top */
+      background-color: var(--text);
       background-image: repeating-linear-gradient(
         -45deg,
         rgba(255, 255, 255, 0.05) 0px,
@@ -178,7 +178,6 @@
       font-variant-numeric: tabular-nums;
     }
     .alt {
-      background-color: var(--blue-alt);
       font-size: clamp(18px, 3vh, 30px);
       font-weight: 400;
     }
@@ -190,7 +189,8 @@
       transform: scale(0.985);
       filter: brightness(0.86);
     }
-    .preset.pressed { background-color: var(--blue-press); }
+    .preset.pressed,
+    .alt.pressed { background-color: #c6c6c6; }   /* darken the light square on touch */
 
     /* --- language footer, bottom-right --- */
     .footer {
