@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <!-- Root points to the active prop for the event (discount variant).
+       ?v bump forces a fresh fetch past any stale cache.
        The authentic tip version stays available at tip-screen.html. -->
-  <meta http-equiv="refresh" content="0; url=discount-screen.html">
+  <meta http-equiv="refresh" content="0; url=discount-screen.html?v=2">
   <title>Save</title>
   <link rel="canonical" href="discount-screen.html">
-  <script>location.replace('discount-screen.html');</script>
+  <script>location.replace('discount-screen.html?v=2');</script>
 </head>
 <body style="margin:0;background:#373737"></body>
 </html>
