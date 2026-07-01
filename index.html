@@ -355,6 +355,23 @@
       opacity: 0;
       animation: fade-up 0.4s 0.62s ease forwards;
     }
+    .free-msg {
+      text-align: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(24px, 4vh, 44px);
+      line-height: 1.15;
+      color: var(--text);
+      opacity: 0;
+      animation: fade-up 0.45s 0.9s ease forwards;
+    }
+    .free-msg span {
+      display: block;
+      margin-top: clamp(4px, 1vh, 10px);
+      font-weight: 400;
+      font-size: 0.62em;
+      color: var(--muted);
+    }
     @keyframes fade-up {
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -455,6 +472,7 @@
         </svg>
         <div class="thanks" id="thanksText">Thank you!</div>
         <div class="confirm-amount" id="confirmAmount"></div>
+        <div class="free-msg">It&rsquo;s actually free!<span>Enjoy this coffee on Gumloop</span></div>
       </div>
     </div>
   </div>
@@ -467,7 +485,7 @@
       subtotal:     "2.70",     // amount shown under the title
       thankYouMsg:  "Thank you!", // confirmation headline
       processingMs: 1100,       // processing spinner duration
-      showCheckMs:  2200,       // how long the checkmark holds before auto-reset
+      showCheckMs:  4000,       // how long the checkmark holds before auto-reset
       longPressMs:  1200,       // hold time on the corner to reset
       idleResetMs:  60000       // inactivity reset (set 0 to disable)
     };
